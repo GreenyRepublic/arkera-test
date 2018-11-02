@@ -1,17 +1,25 @@
 from unittest import TestCase
 import operator
 import datetime
+import enum
 
 def notcontains(a, b):
     return (b not in a) 
 
+class predTypes(enum.Enum):
+    EQUALS = 0
+    LESSTHAN = 1
+    GREATERTHAN = 2
+    IN = 3
+    NOTIN = 4
+
 class Query():
     entryIndex = 0
-    predicates = {"EQUALS": operator.eq,
-                  "LESSTHAN": operator.gt,
-                  "GREATERTHAN": operator.lt,
-                  "IN": operator.contains,
-                  "NOTIN": notcontains}
+    predicates = {predTypes.EQUALS: operator.eq,
+                  predTypes.LESSTHAN: operator.gt,
+                  predTypes.GREATERTHAN: operator.lt,
+                  predTypes.IN: operator.contains,
+                  predTypes.NOTIN: notcontains}
 
     def evaluate(self, partition):
         returnTab = []
@@ -27,7 +35,7 @@ class Query():
 class idQuery(Query):
     
     entryIndex = 0
-    def __init__(self, ids, pred = "EQUALS"):
+    def __init__(self, ids, pred):
         self.ids = ids
         self.pred = pred
 
