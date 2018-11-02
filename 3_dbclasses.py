@@ -1,40 +1,79 @@
 from unittest import TestCase
 import operator
-import math
+import datetime
+
+def notcontains(a, b):
+    return (b not in a) 
 
 class Query():
-    field = 0
-    def predicate(self, entry):
-        return True
+    entryIndex = 0
+    predicates = {"EQUALS": operator.eq,
+                  "LESSTHAN": operator.gt,
+                  "GREATERTHAN": operator.lt,
+                  "IN": operator.contains,
+                  "NOTIN": notcontains}
 
-    def evaluate(self, table):
-        returnTab = [()]
-        for entry in table:
-            if predicate(entry):
+    def evaluate(self, partition):
+        returnTab = []
+        for entry in partition:
+            if self.predicate(entry):
                 returnTab.append(entry)
         return returnTab
+    
+    def predicate(self, entry, data, pred):
+        return pred(data, entry[self.entryIndex])
+        
 
-#class idQuery(Query):
-    #def __init__(self, predicate, list = []):
+class idQuery(Query):
+    
+    entryIndex = 0
+    def __init__(self, ids, pred = "EQUALS"):
+        self.ids = ids
+        self.pred = pred
+
+    def predicate(self, entry):
+        return super().predicate(entry, self.ids, self.predicates[self.pred])
         
 
 class urlQuery(Query):
+    entryIndex = 1    
     def __init__(self, url):
         self.url = url
+        self.pred = "EQUALS"
+        
     def predicate(self, entry):
-        return (self.url == entry.url)
+        return super().predicate(entry, self.url, self.predicates[self.pred])
+
+class dateQuery(Query):
+    entryIndex = 2
+    def __init__(self, date, pred = "EQUALS"):
+        self.date = date
+        self.pred = pred
+        
+    def predicate(self, entry):
+        return super().predicate(entry, self.date, self.predicates[self.pred])
     
+class ratingQuery(Query):
+    entryIndex = 3
+    def __init__(self, rating, pred = "EQUALS"):
+        self.rating = rating
+        self.pred = pred
+        
+    def predicate(self, entry):
+        return super().predicate(entry, self.rating, self.predicates[self.pred])
 
-#class dateQuery(Query):
 
-#class ratingQuery(Query):
 
-class Database():
-    def __init__(self):
-        self.table = [()]
+testTable = [(0, "google.com", datetime.datetime(1995, 6, 3), 99),
+             (1, "deandepot.com", datetime.datetime(2012,12,10), 24),
+             (2, "arkera.ai", datetime.datetime(1993, 7, 2), 43),
+             (3, "foobar.net", datetime.datetime(2001, 12, 25), 89)]
 
-    def runQueries(self, queries):
-        partition = self.table
-        for query in queries:
-            partition = query.evaluate(partition)
-        return partition
+testQuery1 = [idQuery(2, "GREATERTHAN")]
+testQuery2 = [idQuery(4, "LESSTHAN"), ratingQuery(50, "GREATERTHAN")]
+
+def runQueries(table, queries):
+    partition = table
+    for query in queries:
+        partition = query.evaluate(partition)
+    return partition
